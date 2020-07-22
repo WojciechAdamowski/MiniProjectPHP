@@ -21,7 +21,7 @@ function checkLogin(
     Database $database
 )
 {
-    return $database->findUserByLoginDetails(
+    return $database->findUserByEmailAndPassword(
         $email,
         $password
     );

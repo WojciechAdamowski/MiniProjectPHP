@@ -3,68 +3,45 @@
 
 class Database
 {
-    private $fileName = 'users.txt';
-
     /**
-     * @return array|false
+     * @var mysqli
      */
-    private function getDatabase(){
-        return file(
-            $this->fileName,
-            FILE_IGNORE_NEW_LINES
+    private $connection;
+
+    public function __construct()
+    {
+        $serverHost = "127.0.0.1";
+        $userName = "root";
+        $password = "";
+        $databaseName = "nowa";
+        $databasePort = "3306";
+        $conn = mysqli_connect(
+            $serverHost,
+            $userName,
+            $password,
+            $databaseName,
+            $databasePort
         );
-    }
-
-    /**
-     * @return User[]
-     */
-    private function getAllUsers(){
-        $usersFromDatabase = $this->getDatabase();
-        $users = [];
-
-        $email = 0;
-        $password = 1;
-        foreach ($usersFromDatabase as $user){
-            $user = explode(':', $user);
-            $users[] = new User($user[$email], $user[$password]);
-        }
-        return $users;
-    }
-
-    /**
-     * @param User $user
-     */
-    public function addUserToDatabase(
-        User $user
-    ){
-        file_put_contents(
-            'users.txt',
-            $user->getEmail() . ':' . $user->getPassword() . "\n",
-            FILE_APPEND,
-            null
-        );
+        $this->connection = $conn;
     }
 
     /**
      * @param string $email
      * @param string $password
-     * @return bool
+     * @return string
      */
-    public function findUserByLoginDetails(
+    public function findUserByEmailAndPassword(
         string $email,
         string $password
     ){
-        $users = $this->getAllUsers();
-        if (count($users) > 0){
-            foreach ($users as $user){
-                if (
-                    $email === $user->getEmail() &&
-                    $password === $user->getPassword()
-                ){
-                    return true;
-                }
-            }
+        $query = "SELECT email, password FROM users 
+                  WHERE email="."'"."$email"."'"."
+                  AND password="."'"."$password"."'";
+        $result = $this->connection->query($query);
+        if ($result === false){
             return false;
+        } elseif ($result->num_rows === 1) {
+            return true;
         }
         return false;
     }
@@ -76,15 +53,26 @@ class Database
     public function findUserByEmail(
         string $email
     ){
-        $users = $this->getAllUsers();
-        if (count($users) > 0){
-            foreach ($users as $user){
-                if ($email === $user->getEmail()){
-                    return true;
-                }
-            }
+        $query = "SELECT email FROM users 
+                  WHERE email="."'"."$email"."'";
+        $result = $this->connection->query($query);
+        if ($result === false){
+            return false;
+        } elseif ($result->num_rows === 1) {
+            return true;
         }
         return false;
+    }
+
+    /**
+     * @param User $user
+     */
+    public function addUserToDatabase(
+        User $user
+    ){
+        $query = "INSERT INTO users (email, password)
+                  VALUES ("."'".$user->getEmail()."', '".$user->getPassword()."'".")";
+        $this->connection->query($query);
     }
 }
 
